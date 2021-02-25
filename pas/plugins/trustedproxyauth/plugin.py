@@ -1,10 +1,10 @@
 """Provides the trusted proxy auth plugin.
 """
 
+from AccessControl.class_init import InitializeClass
 from AccessControl.SecurityInfo import ClassSecurityInfo
 from AccessControl.requestmethod import postonly
 from Acquisition import aq_inner, aq_parent
-from App.class_init import default__class_init__ as InitializeClass
 from OFS.Cache import Cacheable
 from DateTime import DateTime
 from Products.CMFCore.permissions import ManagePortal
