@@ -200,7 +200,7 @@ class TrustedProxyAuthPlugin(BasePlugin, Cacheable):
 
                 if self.verify_login:
                     pas = aq_parent(aq_inner(self))
-                    if pas.getUserById(login) is None:
+                    if pas.getUser(login) is None:
                         return None
 
                 logger.debug('trusted user is %r:%r/%r',
@@ -240,9 +240,11 @@ class TrustedProxyAuthPlugin(BasePlugin, Cacheable):
 
             if login in self._username_mapping:
                 login = self._username_mapping[login]
-
+            pas = aq_parent(aq_inner(self))
+            user = pas.getUser(login)
+            uid = user is not None and user.getId() or login
             creds['id'] = login
-            creds['login'] = login
+            creds['login'] = uid
             creds['remote_address'] = remote_address
             creds['remote_host'] = request.get_header('REMOTE_HOST', '')
 
