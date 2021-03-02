@@ -243,8 +243,8 @@ class TrustedProxyAuthPlugin(BasePlugin, Cacheable):
             pas = aq_parent(aq_inner(self))
             user = pas.getUser(login)
             uid = user is not None and user.getId() or login
-            creds['id'] = login
-            creds['login'] = uid
+            creds['id'] = uid
+            creds['login'] = login
             creds['remote_address'] = remote_address
             creds['remote_host'] = request.get_header('REMOTE_HOST', '')
 
