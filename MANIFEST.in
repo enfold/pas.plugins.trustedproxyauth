@@ -5,3 +5,6 @@ include *.rst
 global-exclude *.pyc
 global-exclude ._*
 global-exclude *.mo
+include *.py
+include test-plone-4.2.x.cfg
+include test-plone-5.1.x.cfg

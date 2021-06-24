@@ -26,9 +26,13 @@ setup(name='pas.plugins.trustedproxyauth',
 
       classifiers=[
         'Framework :: Plone',
-        'Framework :: Plone :: 4.2',
-        'Framework :: Plone :: 5.1',
+        'Framework :: Plone :: 5.2',
         'Programming Language :: Python',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'License :: OSI Approved :: GNU General Public License (GPL)',
+        'Development Status :: 5 - Production/Stable',
         'Topic :: Software Development :: Libraries :: Python Modules',
         ],
 
