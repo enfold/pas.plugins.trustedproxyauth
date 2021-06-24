@@ -1,8 +1,8 @@
 Changelog
 =========
 
-1.3.1 (unreleased)
-------------------
+1.3.0+enfold1 (2021-06-24)
+--------------------------
 
 - Fix import for Plone 5.2 and fix id and login to correct values
   [enfold-josh]
