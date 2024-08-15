@@ -105,6 +105,36 @@ user2:admin</pre>
           <td><textarea name="username_mapping" cols="60" rows="20"
                         tal:content="python:'\n'.join(context.username_mapping)"></textarea></td>
         </tr>
+        <tr valign="top">
+          <td>
+              <div class="form-label">Create New Users</div>
+              <div class="form-help">If a user is not found locally, create one using the properties mapping defined below to set the user properties.</div>
+          </td>
+          <td>
+              <input type="checkbox" name="create_new_users" value="1" tal:attributes="checked context/create_new_users" />
+          </td>
+        </tr>
+        <tr valign="top">
+          <td>
+              <div class="form-label">Update Existing Users Properties</div>
+              <div class="form-help">When an existing user is found, use the properties mapping defined below to update the user properties.</div>
+          </td>
+          <td>
+              <input type="checkbox" name="update_existing_users" value="1" tal:attributes="checked context/update_existing_users" />
+          </td>
+        </tr>
+        <tr valign="top">
+          <td>
+              <div class="form-label">User Properties Mapping</div>
+              <div class="form-help">Specify a mapping with request headers and user properties. This will be used to create
+               new users, if the setting is checked above. It will also be used to update user properties, if the setting
+               is checked above. You can use the '+' symbol to concatenate properties, separated by a space. Example:</div>
+              <pre>HTTP_GIVENNAME+HTTP_SN:fullname
+HTTP_EMAIL:email</pre>
+          </td>
+          <td><textarea name="properties_mapping" cols="60" rows="20"
+                        tal:content="python:'\n'.join(context.properties_mapping)"></textarea></td>
+        </tr>
         <tr>
           <td colspan="2">
             <div class="form-element">

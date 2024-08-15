@@ -20,8 +20,11 @@ from ZODB.PersistentMapping import PersistentMapping
 from ZODB.PersistentList import PersistentList
 from socket import gethostbyname, herror, gaierror
 from zope import event
+from zope.globalrequest import getRequest
 import logging
+import random
 import re
+import string
 import time
 
 
@@ -30,6 +33,12 @@ logger = logging.getLogger('pas.plugins.trustedproxyauthauth')
 
 IS_IP = re.compile("^([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])"
                    "(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}$")
+
+
+def generate_random_string(length=20):
+    characters = string.ascii_letters + string.digits + string.punctuation
+    random_string = ''.join(random.choice(characters) for _ in range(length))
+    return random_string
 
 
 manage_addTrustedProxyAuthPlugin = PageTemplateFile(
@@ -79,6 +88,9 @@ class TrustedProxyAuthPlugin(BasePlugin, Cacheable):
         self.lowercase_domain = False
         self.strip_nt_domain = False
         self.strip_ad_domain = False
+        self.create_new_users = False
+        self.update_existing_users = False
+        self.properties_mapping = PersistentList()
         self.username_mapping = PersistentList()
         self._username_mapping = PersistentMapping()
         self.verify_login = False
@@ -99,6 +111,25 @@ class TrustedProxyAuthPlugin(BasePlugin, Cacheable):
 
         return mapping
 
+    security.declarePrivate('_getUserPropertiesFromRequest')
+    def _getUserPropertiesFromRequest(self, request):
+        """Returns a dict containing the property and its value from the request header
+        """
+        # Upgrade config for versions<1.3
+        if not hasattr(self, 'properties_mapping'):
+            self.properties_mapping = PersistentList()
+        props = {}
+        for line in self.properties_mapping:
+            if not line.strip():
+                continue
+            header, prop_name = line.strip().split(':')
+            value = ""
+            for el in header.split('+'):
+                value += "%s " % request.get_header(el, '')
+            props[prop_name] = value.strip()
+
+        return props
+
     security.declarePrivate('_convertUsername')
     def _convertUsername(self, login):
         """Converts usernames based on the plugin configuration.
@@ -113,7 +144,7 @@ class TrustedProxyAuthPlugin(BasePlugin, Cacheable):
         elif self.lowercase_domain and '@' in login:
             user, domain = login.rsplit('@', 1)
             login = '%s@%s' % (user, domain.lower())
-            
+
         if self.strip_nt_domain:
             # DOMAIN\userid
             if '\\' in login:
@@ -131,7 +162,7 @@ class TrustedProxyAuthPlugin(BasePlugin, Cacheable):
         """Handle login for the given user
         """
         mtool = getToolByName(self, 'portal_membership')
-        user = mtool.getUser(login)
+        user = self.getUser(login)
         member = mtool.getMemberById(login)
 
         # Set login times
@@ -200,11 +231,43 @@ class TrustedProxyAuthPlugin(BasePlugin, Cacheable):
 
                 if self.verify_login:
                     pas = aq_parent(aq_inner(self))
-                    if pas.getUser(login) is None:
-                        return None
+                    user = pas.getUser(login)
+                    if user:
+                        logger.debug('trusted user is %r:%r/%r',
+                                    addr, uid, login)
 
-                logger.debug('trusted user is %r:%r/%r',
-                             addr, uid, login)
+                        # Upgrade config for versions<1.3
+                        if not hasattr(self, 'update_existing_users'):
+                            self.update_existing_users = False
+
+                        if self.update_existing_users:
+                            request = getRequest()
+                            mtool = getToolByName(self, 'portal_membership')
+                            member = mtool.getMemberById(login)
+                            properties = self._getUserPropertiesFromRequest(request)
+                            need_update = False
+                            for k,v in properties.items():
+                                if member.getProperty(k) != v:
+                                    need_update = True
+                            if need_update:
+                                logger.debug('New member properties: %r' % properties)
+                                member.setMemberProperties(properties)
+                    else:
+                        # Upgrade config for versions<1.3
+                        if not hasattr(self, 'create_new_users'):
+                            self.create_new_users = False
+
+                        if self.create_new_users:
+                            request = getRequest()
+                            regtool = getToolByName(self, 'portal_registration')
+                            properties = self._getUserPropertiesFromRequest(request)
+                            if "username" not in properties:
+                                properties['username'] = login
+                            passwd = generate_random_string()
+                            logger.debug('Creating new user with properties: %r' % properties)
+                            member = regtool.addMember(login, passwd, properties=properties)
+                        else:
+                            return None
 
                 if self.plone_login_timeout >= 0:
                     last_login_time = self._plone_login_times.get(login, 0)
@@ -270,12 +333,17 @@ class TrustedProxyAuthPlugin(BasePlugin, Cacheable):
                      'lowercase_domain',
                      'strip_nt_domain',
                      'strip_ad_domain',
+                     'create_new_users',
+                     'update_existing_users',
                      'verify_login']:
             if flag in REQUEST.form:
                 setattr(self, flag, True)
             else:
                 setattr(self, flag, False)
-        
+
+        self.properties_mapping = PersistentList(
+            [line.strip() for line in REQUEST.form.get(
+             'properties_mapping').split('\n') if line.strip()])
         self.username_mapping = PersistentList(
             [line.strip() for line in REQUEST.form.get(
              'username_mapping').split('\n') if line.strip()])

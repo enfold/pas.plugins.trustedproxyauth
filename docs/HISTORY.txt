@@ -4,7 +4,9 @@ Changelog
 1.3.0+enfold2 (unreleased)
 --------------------------
 
-- Nothing changed yet.
+- Allow ability to create the user if not found, and to update its
+  member properties.
+  [frapell]
 
 
 1.3.0+enfold1 (2021-06-24)
