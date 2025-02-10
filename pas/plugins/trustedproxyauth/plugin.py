@@ -247,7 +247,7 @@ class TrustedProxyAuthPlugin(BasePlugin, Cacheable):
                             properties = self._getUserPropertiesFromRequest(request)
                             need_update = False
                             for k,v in properties.items():
-                                if member.getProperty(k) != v:
+                                if v and member.getProperty(k) != v:
                                     need_update = True
                             if need_update:
                                 logger.debug('New member properties: %r' % properties)
